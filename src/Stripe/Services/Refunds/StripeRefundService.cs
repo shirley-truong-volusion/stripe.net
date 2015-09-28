@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Stripe
 {
@@ -11,12 +12,17 @@ namespace Stripe
 
         public virtual StripeRefund Create(string chargeId, StripeRefundCreateOptions createOptions = null, StripeRequestOptions requestOptions = null)
         {
+            return CreateAsync(chargeId, createOptions, requestOptions).Result;
+        }
+
+        public virtual async Task<StripeRefund> CreateAsync(string chargeId, StripeRefundCreateOptions createOptions = null, StripeRequestOptions requestOptions = null)
+        {
             requestOptions = SetupRequestOptions(requestOptions);
 
             var url = string.Format("{0}/{1}/refunds", Urls.Charges, chargeId);
             url = this.ApplyAllParameters(createOptions, url, false);
 
-            var response = Requestor.PostString(url, requestOptions);
+            var response = await Requestor.PostStringAsync(url, requestOptions);
 
             return Mapper<StripeRefund>.MapFromJson(response);
         }

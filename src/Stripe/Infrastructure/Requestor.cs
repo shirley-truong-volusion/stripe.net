@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Stripe
 {
@@ -16,9 +17,14 @@ namespace Stripe
 
         public static string PostString(string url, StripeRequestOptions requestOptions)
         {
+            return PostStringAsync(url, requestOptions).Result;
+        }
+
+        public static Task<string> PostStringAsync(string url, StripeRequestOptions requestOptions)
+        {
             var wr = GetWebRequest(url, "POST", requestOptions);
 
-            return ExecuteWebRequest(wr);
+            return ExecuteWebRequestAsync(wr);
         }
 
         public static string Delete(string url, StripeRequestOptions requestOptions)
@@ -101,11 +107,48 @@ namespace Stripe
             }
         }
 
+        private static async Task<string> ExecuteWebRequestAsync(WebRequest webRequest)
+        {
+            try
+            {
+                using (var response = await webRequest.GetResponseAsync())
+                {
+                    return await ReadStreamAsync(response.GetResponseStream());
+                }
+            }
+            catch (WebException webException)
+            {
+                if (webException.Response != null)
+                {
+                    var statusCode = ((HttpWebResponse)webException.Response).StatusCode;
+
+                    var stripeError = new StripeError();
+
+                    if (webRequest.RequestUri.ToString().Contains("oauth"))
+                        stripeError = Mapper<StripeError>.MapFromJson(ReadStream(webException.Response.GetResponseStream()));
+                    else
+                        stripeError = Mapper<StripeError>.MapFromJson(ReadStream(webException.Response.GetResponseStream()), "error");
+
+                    throw new StripeException(statusCode, stripeError, stripeError.Message);
+                }
+
+                throw;
+            }
+        }
+
         private static string ReadStream(Stream stream)
         {
             using (var reader = new StreamReader(stream, Encoding.UTF8))
             {
                 return reader.ReadToEnd();
+            }
+        }
+
+        private static async Task<string> ReadStreamAsync(Stream stream)
+        {
+            using (var reader = new StreamReader(stream, Encoding.UTF8))
+            {
+                return await reader.ReadToEndAsync();
             }
         }
     }

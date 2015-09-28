@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Stripe
 {
@@ -13,11 +14,16 @@ namespace Stripe
 
         public virtual StripeCharge Create(StripeChargeCreateOptions createOptions, StripeRequestOptions requestOptions = null)
         {
+            return CreateAsync(createOptions, requestOptions).Result;
+        }
+
+        public virtual async Task<StripeCharge> CreateAsync(StripeChargeCreateOptions createOptions, StripeRequestOptions requestOptions = null)
+        {
             requestOptions = SetupRequestOptions(requestOptions);
 
             var url = this.ApplyAllParameters(createOptions, Urls.Charges, false);
 
-            var response = Requestor.PostString(url, requestOptions);
+            var response = await Requestor.PostStringAsync(url, requestOptions);
 
             return Mapper<StripeCharge>.MapFromJson(response);
         }
