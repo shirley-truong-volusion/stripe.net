@@ -10,9 +10,14 @@ namespace Stripe
     {
         public static string GetString(string url, StripeRequestOptions requestOptions)
         {
+            return GetStringAsync(url, requestOptions).Result;
+        }
+
+        public static async Task<string> GetStringAsync(string url, StripeRequestOptions requestOptions)
+        {
             var wr = GetWebRequest(url, "GET", requestOptions);
 
-            return ExecuteWebRequest(wr);
+            return await ExecuteWebRequestAsync(wr);
         }
 
         public static string PostString(string url, StripeRequestOptions requestOptions)

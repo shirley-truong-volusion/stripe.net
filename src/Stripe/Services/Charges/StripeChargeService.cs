@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Stripe
@@ -40,19 +39,42 @@ namespace Stripe
             return Mapper<StripeCharge>.MapFromJson(response);
         }
 
+        public virtual async Task<StripeCharge> GetAsync(string chargeId, StripeRequestOptions requestOptions = null)
+        {
+            requestOptions = SetupRequestOptions(requestOptions);
+
+            var url = string.Format("{0}/{1}", Urls.Charges, chargeId);
+            url = this.ApplyAllParameters(null, url, false);
+
+            var response = await Requestor.GetStringAsync(url, requestOptions);
+
+            return Mapper<StripeCharge>.MapFromJson(response);
+        }
+
         public virtual IEnumerable<StripeCharge> List(StripeChargeListOptions listOptions = null, StripeRequestOptions requestOptions = null)
+        {
+            return ListAsync(listOptions, requestOptions).Result;
+        }
+
+        public virtual async Task<IEnumerable<StripeCharge>> ListAsync(StripeChargeListOptions listOptions = null, StripeRequestOptions requestOptions = null)
         {
             requestOptions = SetupRequestOptions(requestOptions);
 
             var url = Urls.Charges;
             url = this.ApplyAllParameters(listOptions, url, true);
 
-            var response = Requestor.GetString(url, requestOptions);
+            var response = await Requestor.GetStringAsync(url, requestOptions);
 
             return Mapper<StripeCharge>.MapCollectionFromJson(response);
         }
 
         public virtual StripeCharge Capture(string chargeId, int? captureAmount = null, int? applicationFee = null, StripeRequestOptions requestOptions = null)
+        {
+            return CaptureAsync(chargeId, captureAmount, applicationFee, requestOptions).Result;
+        }
+
+        public virtual async Task<StripeCharge> CaptureAsync(string chargeId, int? captureAmount = null, int? applicationFee = null,
+            StripeRequestOptions requestOptions = null)
         {
             requestOptions = SetupRequestOptions(requestOptions);
 
@@ -64,7 +86,7 @@ namespace Stripe
             if (applicationFee.HasValue)
                 url = ParameterBuilder.ApplyParameterToUrl(url, "application_fee", applicationFee.Value.ToString());
 
-            var response = Requestor.PostString(url, requestOptions);
+            var response = await Requestor.PostStringAsync(url, requestOptions);
 
             return Mapper<StripeCharge>.MapFromJson(response);
         }
